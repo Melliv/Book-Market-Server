@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"controller"
 
 	"github.com/gorilla/mux"
+	"github.com/Melliv/Book-Market-Server/controllers"
 )
 
 var bookController BookController

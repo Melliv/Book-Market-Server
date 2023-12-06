@@ -1,4 +1,4 @@
-module BookMarket
+module github.com/Melliv/Book-Market-Server
 
 go 1.21.4
 
