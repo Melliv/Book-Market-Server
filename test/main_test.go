@@ -8,13 +8,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Melliv/Book-Market-Server/internal/controllers"
+	"github.com/Melliv/Book-Market-Server/internal/enums"
+	"github.com/Melliv/Book-Market-Server/internal/helpers"
+	"github.com/Melliv/Book-Market-Server/internal/types"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFlow(t *testing.T) {
-	connectDatabase(Test)
-	dropCollection("Book")
+	helpers.ConnectDatabase(enums.Test)
+	helpers.DropCollection("Book")
 
 	token, err := logIn()
 	assert.NoError(t, err)
@@ -36,7 +40,7 @@ func TestFlow(t *testing.T) {
 }
 
 func logIn() (string, error) {
-	validCredentials := User{
+	validCredentials := types.User{
 		Username: "admin1",
 		Password: "admin1",
 	}
@@ -53,7 +57,7 @@ func logIn() (string, error) {
 	w := httptest.NewRecorder()
 
 	// Call the loginHandler function with the valid credentials
-	loginHandler(w, reqValid)
+	controllers.LoginHandler(w, reqValid)
 
 	// Check the status code and the presence of the token in the response body
 	if w.Code != http.StatusOK {
@@ -75,7 +79,7 @@ func logIn() (string, error) {
 }
 
 func createBook(token string) (string, error) {
-	reqBook := Book{
+	reqBook := types.Book{
 		Title: "Test title 1",
 		Author: "Test author 1",
 	}
@@ -88,8 +92,7 @@ func createBook(token string) (string, error) {
 
 	w := httptest.NewRecorder()
 
-	bookController := NewDefaultBookController()
-	authMiddleware := baseMiddleware(authenticate(http.HandlerFunc(bookController.createBook)))
+	authMiddleware := helpers.BaseMiddleware(helpers.Authenticate(http.HandlerFunc(controllers.CreateBook)))
 
 	authMiddleware.ServeHTTP(w, req)
 
@@ -98,7 +101,7 @@ func createBook(token string) (string, error) {
 		return "", fmt.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
 	}
 
-	var resBook Book
+	var resBook types.Book
 	err := json.NewDecoder(w.Body).Decode(&resBook)
 	if err != nil {
 		return "", fmt.Errorf("Invalid request body. %s", err)
@@ -115,7 +118,7 @@ func createBook(token string) (string, error) {
 }
 
 func updateBook(token string, bookId string) (error) {
-	book := Book{
+	book := types.Book{
 		ID: bookId,
 		Title: "Test title 1 new",
 		Author: "Test author 1 new",
@@ -134,8 +137,7 @@ func updateBook(token string, bookId string) (error) {
 
 	w := httptest.NewRecorder()
 
-	bookController := NewDefaultBookController()
-	authMiddleware := baseMiddleware(authenticate(http.HandlerFunc(bookController.updateBook)))
+	authMiddleware := helpers.BaseMiddleware(helpers.Authenticate(http.HandlerFunc(controllers.UpdateBook)))
 
 	authMiddleware.ServeHTTP(w, req)
 
@@ -147,7 +149,7 @@ func updateBook(token string, bookId string) (error) {
 }
 
 func getBook(token string, bookId string) (error) {
-	book := Book{
+	book := types.Book{
 		ID: bookId,
 		Title: "Test title 1",
 		Author: "Test author 1",
@@ -164,8 +166,7 @@ func getBook(token string, bookId string) (error) {
 
 	w := httptest.NewRecorder()
 
-	bookController := NewDefaultBookController()
-	authMiddleware := baseMiddleware(authenticate(http.HandlerFunc(bookController.getBook)))
+	authMiddleware := helpers.BaseMiddleware(helpers.Authenticate(http.HandlerFunc(controllers.GetBook)))
 
 	authMiddleware.ServeHTTP(w, req)
 
@@ -173,7 +174,7 @@ func getBook(token string, bookId string) (error) {
 		return fmt.Errorf("Expected status code %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body)
 	}
 
-	var resBook Book
+	var resBook types.Book
 	err := json.NewDecoder(w.Body).Decode(&resBook)
 	if err != nil {
 		return fmt.Errorf("Invalid request body. %s", err)
@@ -190,8 +191,7 @@ func getBooks() (error) {
 
 	w := httptest.NewRecorder()
 
-	bookController := NewDefaultBookController()
-	middleware := baseMiddleware(http.HandlerFunc(bookController.getBooks))
+	middleware := helpers.BaseMiddleware(http.HandlerFunc(controllers.GetBooks))
 
 	middleware.ServeHTTP(w, req)
 
@@ -199,7 +199,7 @@ func getBooks() (error) {
 		return fmt.Errorf("Expected status code %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body)
 	}
 
-	var resBookPagination BookPagination
+	var resBookPagination types.BookPagination
 
 	err := json.NewDecoder(w.Body).Decode(&resBookPagination)
 	if err != nil {

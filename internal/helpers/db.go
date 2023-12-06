@@ -1,4 +1,4 @@
-package main
+package helpers
 
 import (
 	"context"
@@ -6,16 +6,17 @@ import (
 	"log"
 	"time"
 
+	"github.com/Melliv/Book-Market-Server/internal/enums"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var db *mongo.Database
+var DB *mongo.Database
 
 
-func connectDatabase(env Env) {
+func ConnectDatabase(env enums.Env) {
 	// MongoDB connection string. Replace it with your actual MongoDB connection string.
-	connectionString := getEnvVar("DB_HOST")
+	connectionString := GetEnvVar("DB_HOST")
 
 	// Create a context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -33,19 +34,19 @@ func connectDatabase(env Env) {
 		log.Fatal(err)
 	}
 
-	if env == Prod {
-		db = client.Database("Some")
-	} else if env == Test {
-		db = client.Database("Test")
+	if env == enums.Prod {
+		DB = client.Database("Some")
+	} else if env == enums.Test {
+		DB = client.Database("Test")
 	} else {
-		db = client.Database("Some")
+		DB = client.Database("Some")
 	}
 
 	fmt.Println("Connected to MongoDB!")
 }
 
-func dropCollection(collectionName string) {
-	err := db.Collection(collectionName).Drop(context.Background())
+func DropCollection(collectionName string) {
+	err := DB.Collection(collectionName).Drop(context.Background())
 	if err != nil {
 		log.Fatal("Database collection drop error! ", err)
 	}

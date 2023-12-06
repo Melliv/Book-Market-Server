@@ -3,39 +3,23 @@ package controllers
 import (
 	"encoding/json"
 	"log"
-	"net/http"
 	"strconv"
+	"net/http"
 
+	"github.com/Melliv/Book-Market-Server/internal/services"
+	"github.com/Melliv/Book-Market-Server/internal/types"
 	"github.com/gorilla/mux"
 )
 
-type BookController interface {
-	getBook(w http.ResponseWriter, r *http.Request)
-	getBooks(w http.ResponseWriter, r *http.Request)
-	getUserBooks(w http.ResponseWriter, r *http.Request)
-	createBook(w http.ResponseWriter, r *http.Request)
-	updateBook(w http.ResponseWriter, r *http.Request)
-	deleteBook(w http.ResponseWriter, r *http.Request)
-}
-
-type DefaultBookController struct {
-	bookService BookService
-}
-
-func NewDefaultBookController() *DefaultBookController {
-	return &DefaultBookController{bookService: NewDefaultBookService()}
-}
-
-
-func (c *DefaultBookController) getBook(w http.ResponseWriter, r *http.Request) {
+func GetBook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	bookId := vars["id"]
 
-	books := c.bookService.getBook(bookId)
+	books := services.GetBook(bookId)
 	json.NewEncoder(w).Encode(books)
 }
 
-func (c *DefaultBookController) getBooks(w http.ResponseWriter, r *http.Request) {
+func GetBooks(w http.ResponseWriter, r *http.Request) {
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
 	var limit int
@@ -48,7 +32,7 @@ func (c *DefaultBookController) getBooks(w http.ResponseWriter, r *http.Request)
 		offset, _ = strconv.Atoi(offsetStr)
 	}
 
-	booksPagination, err := c.bookService.getBooks(limit, offset)
+	booksPagination, err := services.GetBooks(limit, offset)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -56,15 +40,15 @@ func (c *DefaultBookController) getBooks(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(*booksPagination)
 }
 
-func (c *DefaultBookController) getUserBooks(w http.ResponseWriter, r *http.Request) {
+func GetUserBooks(w http.ResponseWriter, r *http.Request) {
 	ownerId := r.Context().Value("userId").(string)
-	books := c.bookService.getBooksByOwnerId(ownerId)
+	books := services.GetBooksByOwnerId(ownerId)
 	json.NewEncoder(w).Encode(books)
 }
 
-func (c *DefaultBookController) createBook(w http.ResponseWriter, r *http.Request) {
+func CreateBook(w http.ResponseWriter, r *http.Request) {
 	ownerId := r.Context().Value("userId").(string)
-	var book Book
+	var book types.Book
 
 	err := json.NewDecoder(r.Body).Decode(&book)
 	if err != nil {
@@ -72,21 +56,21 @@ func (c *DefaultBookController) createBook(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	book.OwnerId = ownerId
-	book = c.bookService.createBook(book)
+	book = services.CreateBook(book)
 	json.NewEncoder(w).Encode(book)
 }
 
-func (c *DefaultBookController) updateBook(w http.ResponseWriter, r *http.Request) {
+func UpdateBook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	bookId := vars["id"]
-	var book Book
+	var book types.Book
 
 	err := json.NewDecoder(r.Body).Decode(&book)
 	if err != nil || bookId != book.ID {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	err = c.bookService.updateBook(book)
+	err = services.UpdateBook(book)
 	if err != nil {
 		log.Print(err)
 		http.Error(w, "ID mismatching", http.StatusBadRequest)
@@ -95,11 +79,11 @@ func (c *DefaultBookController) updateBook(w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w)
 }
 
-func (c *DefaultBookController) deleteBook(w http.ResponseWriter, r *http.Request) {
+func DeleteBook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	bookId := vars["id"]
 
-	err := c.bookService.deleteBook(bookId)
+	err := services.DeleteBook(bookId)
 	if err != nil {
 		log.Print(err)
 		http.Error(w, "ID mismatching", http.StatusBadRequest)

@@ -1,4 +1,4 @@
-package main
+package repositories
 
 import (
 	"context"
@@ -8,41 +8,25 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/Melliv/Book-Market-Server/internal/helpers"
+	"github.com/Melliv/Book-Market-Server/internal/types"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type BookRepository interface {
-	getBook(bookId string) Book
-	getBooks(limit int, offset int) []Book
-	getBooksCount() int
-	getBooksByOwnerId(ownerId string) []Book
-	createBook(book Book) Book
-	createBooks(books []Book) []Book
-	updateBook(book Book) error
-	deleteBook(bookId string) error
-}
-
-type DefaultBookRepository struct {
-}
-
-func NewDefaultBookRepository() *DefaultBookRepository {
-	return &DefaultBookRepository{}
-}
-
-func (r *DefaultBookRepository) getBook(bookId string) Book {
+func GetBook(bookId string) types.Book {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var book Book
+	var book types.Book
 
-	err := db.Collection("Book").FindOne(ctx, bson.M{"_id": getPrimitiveObjectID(bookId)}).Decode(&book)
+	err := helpers.DB.Collection("Book").FindOne(ctx, bson.M{"_id": helpers.GetPrimitiveObjectID(bookId)}).Decode(&book)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return book
 }
 
-func (r *DefaultBookRepository) getBooks(limit int, offset int) []Book {
+func GetBooks(limit int, offset int) []types.Book {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -50,23 +34,23 @@ func (r *DefaultBookRepository) getBooks(limit int, offset int) []Book {
 	findOptions.SetSkip(int64(offset))
 	findOptions.SetLimit(int64(limit))
 
-	cursor, err := db.Collection("Book").Find(ctx, bson.D{}, findOptions)
+	cursor, err := helpers.DB.Collection("Book").Find(ctx, bson.D{}, findOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer cursor.Close(ctx)
 
-	var books []Book
-	mapCursorToTarget(ctx, cursor, &books)
+	var books []types.Book
+	helpers.MapCursorToTarget(ctx, cursor, &books)
 
 	return books
 }
 
-func (r *DefaultBookRepository) getBooksCount() int {
+func GetBooksCount() int {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	totalCount, err := db.Collection("Book").CountDocuments(ctx, bson.D{})
+	totalCount, err := helpers.DB.Collection("Book").CountDocuments(ctx, bson.D{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -74,27 +58,27 @@ func (r *DefaultBookRepository) getBooksCount() int {
 	return int(totalCount)
 }
 
-func (r *DefaultBookRepository) getBooksByOwnerId(ownerId string) []Book {
+func GetBooksByOwnerId(ownerId string) []types.Book {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	filter := bson.M{"ownerId": ownerId}
-	cursor, err := db.Collection("Book").Find(ctx, filter)
+	cursor, err := helpers.DB.Collection("Book").Find(ctx, filter)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer cursor.Close(ctx)
 
-	var books []Book
-	mapCursorToTarget(ctx, cursor, &books)
+	var books []types.Book
+	helpers.MapCursorToTarget(ctx, cursor, &books)
 	return books
 }
 
-func (r *DefaultBookRepository) createBook(book Book) Book {
+func CreateBook(book types.Book) types.Book {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	result, err := db.Collection("Book").InsertOne(ctx, book)
+	result, err := helpers.DB.Collection("Book").InsertOne(ctx, book)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -102,7 +86,7 @@ func (r *DefaultBookRepository) createBook(book Book) Book {
 	return book
 }
 
-func (r *DefaultBookRepository) createBooks(books []Book) []Book {
+func CreateBooks(books []types.Book) []types.Book {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -111,7 +95,7 @@ func (r *DefaultBookRepository) createBooks(books []Book) []Book {
 		bookInterfaces = append(bookInterfaces, book)
 	}
 
-	result, err := db.Collection("Book").InsertMany(ctx, bookInterfaces)
+	result, err := helpers.DB.Collection("Book").InsertMany(ctx, bookInterfaces)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -123,11 +107,11 @@ func (r *DefaultBookRepository) createBooks(books []Book) []Book {
 	return books
 }
 
-func (r *DefaultBookRepository) updateBook(book Book) error {
+func UpdateBook(book types.Book) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	filter := bson.M{"_id": getPrimitiveObjectID(book.ID)}
+	filter := bson.M{"_id": helpers.GetPrimitiveObjectID(book.ID)}
 	update := bson.M{
 		"$set": bson.M{
 			"title":   book.Title,
@@ -135,7 +119,7 @@ func (r *DefaultBookRepository) updateBook(book Book) error {
 			"ownerId": book.OwnerId,
 		},
 	}
-	result, err := db.Collection("Book").UpdateOne(ctx, filter, update)
+	result, err := helpers.DB.Collection("Book").UpdateOne(ctx, filter, update)
 
 	if result != nil && result.MatchedCount != 1 {
 		return fmt.Errorf("MatchedCount not 1")
@@ -146,12 +130,12 @@ func (r *DefaultBookRepository) updateBook(book Book) error {
 	return nil
 }
 
-func (r *DefaultBookRepository) deleteBook(bookId string) error {
+func DeleteBook(bookId string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	filter := bson.M{"_id": getPrimitiveObjectID(bookId)}
-	result, err := db.Collection("Book").DeleteOne(ctx, filter)
+	filter := bson.M{"_id": helpers.GetPrimitiveObjectID(bookId)}
+	result, err := helpers.DB.Collection("Book").DeleteOne(ctx, filter)
 
 	if result != nil && result.DeletedCount != 1 {
 		return fmt.Errorf("MatchedCount not 1")
