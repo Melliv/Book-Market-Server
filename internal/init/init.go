@@ -35,5 +35,5 @@ func InitData() {
 	}
 	books = repositories.CreateBooks(books)
 
-	fmt.Println("Initial data initialised!", len(books), books[0].ID)
+	fmt.Println("Initial data initialised!")
 }
