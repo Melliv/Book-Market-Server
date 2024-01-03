@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/Melliv/Book-Market-Server/internal/enums"
+	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -83,4 +85,18 @@ func dir(envFile string) string {
 	}
 
 	return filepath.Join(currentDir, envFile)
+}
+
+func ValidateBody(obj interface{}) error {
+	validate := validator.New()
+	err := validate.Struct(obj)
+	
+	if err != nil {
+		var errList []string
+		for _, err := range err.(validator.ValidationErrors) {
+			errList = append(errList, err.Field() + " " + err.Tag())
+		}
+		return fmt.Errorf(strings.Join(errList[:], ", "))
+	}
+	return nil
 }

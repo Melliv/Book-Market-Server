@@ -40,7 +40,7 @@ func GetBooks(limit int, offset int) []types.Book {
 	}
 	defer cursor.Close(ctx)
 
-	var books []types.Book
+	books := make([]types.Book, 0)
 	helpers.MapCursorToTarget(ctx, cursor, &books)
 
 	return books

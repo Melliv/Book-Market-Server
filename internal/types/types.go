@@ -17,12 +17,12 @@ type JWTClaims struct {
 
 type Book struct {
 	ID      string `json:"id" bson:"_id,omitempty"`
-	Title   string `json:"title" bson:"title"`
+	Title   string `json:"title" bson:"title" validate:"required"`
 	Author  string `json:"author" bson:"author"`
 	OwnerId string `json:"ownerId" bson:"ownerId"`
 }
 
 type BookPagination struct {
-	Books      []Book
+	Books      []Book `json:"books"`
 	TotalCount int    `json:"totalCount" bson:"totalCount"`
 }

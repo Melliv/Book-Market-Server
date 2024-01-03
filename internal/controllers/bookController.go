@@ -3,9 +3,10 @@ package controllers
 import (
 	"encoding/json"
 	"log"
-	"strconv"
 	"net/http"
+	"strconv"
 
+	"github.com/Melliv/Book-Market-Server/internal/helpers"
 	"github.com/Melliv/Book-Market-Server/internal/services"
 	"github.com/Melliv/Book-Market-Server/internal/types"
 	"github.com/gorilla/mux"
@@ -52,9 +53,16 @@ func CreateBook(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&book)
 	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, "Invalid request body!", http.StatusBadRequest)
 		return
 	}
+
+	err = helpers.ValidateBody(book)
+	if err != nil {
+		http.Error(w, "Invalid request body!\n" + err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	book.OwnerId = ownerId
 	book = services.CreateBook(book)
 	json.NewEncoder(w).Encode(book)

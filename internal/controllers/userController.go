@@ -41,7 +41,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
+		json.NewEncoder(w).Encode(map[string]string{"token": tokenString, "id": userPointer.ID, "username": userPointer.Username})
 	} else {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 	}
